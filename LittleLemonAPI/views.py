@@ -1,26 +1,54 @@
 from rest_framework import generics, status
 from rest_framework.views import APIView
-from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from django.contrib.auth.models import User, Group
 from django.shortcuts import get_object_or_404
 from datetime import date
-from .models import MenuItem, Cart, Order, OrderItem
-from .serializers import MenuItemSerializer, UserSerializer, CartSerializer, OrderSerializer, OrderItemSerializer
+from .models import Category, MenuItem, Cart, Order
+from .serializers import CategorySerializer, MenuItemSerializer, UserSerializer, CartSerializer, OrderSerializer, OrderItemSerializer
+from .paginations import StandardResultsSetPagination
+
 
 # Create your views here.
 
-
-class MenuItemsView(generics.ListCreateAPIView):
-    queryset = MenuItem.objects.all()
-    serializer_class = MenuItemSerializer
+class CatergoriesView(generics.ListCreateAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
 
     def get_permissions(self):
         if (self.request.method == 'GET'):
             return [IsAuthenticated()]
 
         return [IsAdminUser()]
+
+
+class MenuItemsView(generics.ListCreateAPIView):
+    queryset = MenuItem.objects.all()
+    serializer_class = MenuItemSerializer
+    ordering_fields = ['price', 'title']
+    search_fields = ['title']
+    pagination_class = StandardResultsSetPagination
+
+    def get_permissions(self):
+        if (self.request.method == 'GET'):
+            return [IsAuthenticated()]
+
+        return [IsAdminUser()]
+
+    def get_queryset(self):
+        queryset = MenuItem.objects.all()
+        featured = self.request.query_params.get("featured")
+        category = self.request.query_params.get("category")
+        perpage = self.request.query_params.get("perpage")
+        if featured:
+            queryset = queryset.filter(featured=featured)
+        if category:
+            queryset = queryset.filter(category__title=category)
+        if perpage:
+            self.pagination_class.page_size = perpage
+
+        return queryset
 
 
 class SingleMenuItemView(generics.RetrieveUpdateDestroyAPIView):
@@ -155,6 +183,9 @@ class OrderView(APIView):
         user = request.user
         cart_items = Cart.objects.filter(user_id=user.id)
 
+        if not cart_items.exists():
+            return Response({"message": "cart is empty"}, status=status.HTTP_400_BAD_REQUEST)
+
         order_data = {
             "user_id": user.id,
             "total": sum([int(n) for n in cart_items.values_list("price", flat=True)]),
@@ -225,13 +256,15 @@ class SingleOrderView(APIView):
     def put(self, request, pk, *args, **kwargs):
         order = get_object_or_404(Order, id=pk)
         delivery_crew_id = request.data.get("delivery_crew_id")
-        if not self.is_in_group(delivery_crew_id, "delivery crew"):
-            return Response({"message": "not a valid delivery crew"}, status=status.HTTP_400_BAD_REQUEST)
+        status_value = request.data.get("status")
+        data = {}
 
-        data = {
-            "status": request.data.get("status"),
-            "delivery_crew_id": delivery_crew_id
-        }
+        if delivery_crew_id:
+            if not self.is_in_group(delivery_crew_id, "delivery crew"):
+                return Response({"message": "not a valid delivery crew"}, status=status.HTTP_400_BAD_REQUEST)
+            data["delivery_crew_id"] = delivery_crew_id
+        if status_value:
+            data["status"] = status_value
 
         serializer = OrderSerializer(instance=order, data=data, partial=True)
         if serializer.is_valid():

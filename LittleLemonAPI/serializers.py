@@ -71,35 +71,3 @@ class OrderSerializer(serializers.ModelSerializer):
         representation['order_items'] = OrderItemSerializer(
             instance.orderitem_set.all(), many=True).data
         return representation
-
-
-# class OrderItemSerializer(serializers.ModelSerializer):
-#     order_id = serializers.IntegerField(write_only=True)
-#     menuitem = serializers.StringRelatedField(read_only=True)
-#     menuitem_id = serializers.PrimaryKeyRelatedField(
-#         write_only=True, queryset=MenuItem.objects.all())
-
-#     class Meta:
-#         model = OrderItem
-#         fields = ['order_id', 'menuitem', 'menuitem_id',
-#                   'quantity', 'unit_price', 'price']
-
-# class OrderSerializer(serializers.ModelSerializer):
-#     user = serializers.StringRelatedField(read_only=True)
-#     user_id = serializers.PrimaryKeyRelatedField(
-#         write_only=True, queryset=User.objects.all())
-#     delivery_crew = serializers.StringRelatedField(read_only=True)
-#     delivery_crew_id = serializers.PrimaryKeyRelatedField(
-#         write_only=True, queryset=User.objects.all(), required=False)
-#     order_items = OrderItemSerializer(many=True, read_only=True)
-
-#     class Meta:
-#         model = Order
-#         fields = ['id', 'user', 'user_id', 'delivery_crew',
-#                   'delivery_crew_id', 'status', 'order_items', 'total', 'date']
-
-#     def to_representation(self, instance):
-#         representation = super().to_representation(instance)
-#         representation['order_items'] = OrderItemSerializer(
-#             instance.orderitem_set.all(), many=True).data
-#         return representation
