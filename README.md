@@ -1,6 +1,30 @@
 # little-lemon-api-django
 
-![image](https://user-images.githubusercontent.com/96961406/218340718-5f6b3048-57c8-4783-8593-7acc5d9a81d0.png)
+/auth/users
+
+No role required
+
+POST
+
+Creates a new user with name, email and password
+
+/auth/users/me/
+
+ 
+
+Anyone with a valid user token
+
+GET
+
+Displays only the current user
+
+/auth/token/login/
+
+Anyone with a valid username and password
+
+POST
+
+Generates access tokens that can be used in other API calls in this project
 
 ![image](https://user-images.githubusercontent.com/96961406/218340705-ee7da15f-f480-4617-95cc-c989e01aab23.png)
 
