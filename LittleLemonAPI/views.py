@@ -2,6 +2,7 @@ from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import UserRateThrottle
 from django.contrib.auth.models import User, Group
 from django.shortcuts import get_object_or_404
 from datetime import date
@@ -15,6 +16,7 @@ from .paginations import StandardResultsSetPagination
 class CatergoriesView(generics.ListCreateAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+    throttle_classes = [UserRateThrottle]
 
     def get_permissions(self):
         if (self.request.method == 'GET'):
@@ -29,6 +31,7 @@ class MenuItemsView(generics.ListCreateAPIView):
     ordering_fields = ['price', 'title']
     search_fields = ['title']
     pagination_class = StandardResultsSetPagination
+    throttle_classes = [UserRateThrottle]
 
     def get_permissions(self):
         if (self.request.method == 'GET'):
@@ -54,6 +57,7 @@ class MenuItemsView(generics.ListCreateAPIView):
 class SingleMenuItemView(generics.RetrieveUpdateDestroyAPIView):
     queryset = MenuItem.objects.all()
     serializer_class = MenuItemSerializer
+    throttle_classes = [UserRateThrottle]
 
     def get_permissions(self):
         if (self.request.method == 'GET'):
@@ -64,6 +68,7 @@ class SingleMenuItemView(generics.RetrieveUpdateDestroyAPIView):
 
 class ManagerUsersView(APIView):
     permission_classes = [IsAdminUser]
+    throttle_classes = [UserRateThrottle]
 
     def get(self, request, *args, **kwargs):
         managers = User.objects.filter(groups__name='manager').all()
@@ -83,6 +88,9 @@ class ManagerUsersView(APIView):
 
 
 class SingleManagerUserView(APIView):
+    permission_classes = [IsAdminUser]
+    throttle_classes = [UserRateThrottle]
+
     def delete(self, request, pk, *args, **kwargs):
         if pk:
             user = get_object_or_404(User, id=pk)
@@ -95,6 +103,7 @@ class SingleManagerUserView(APIView):
 
 class DeliveryUsersView(APIView):
     permission_classes = [IsAdminUser]
+    throttle_classes = [UserRateThrottle]
 
     def get(self, request, *args, **kwargs):
         managers = User.objects.filter(groups__name='delivery crew').all()
@@ -115,6 +124,7 @@ class DeliveryUsersView(APIView):
 
 class SingleDeliveryUserView(APIView):
     permission_classes = [IsAdminUser]
+    throttle_classes = [UserRateThrottle]
 
     def delete(self, request, pk, *args, **kwargs):
         if pk:
@@ -128,6 +138,7 @@ class SingleDeliveryUserView(APIView):
 
 class CartView(APIView):
     permission_classes = [IsAuthenticated]
+    throttle_classes = [UserRateThrottle]
 
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -163,6 +174,7 @@ class CartView(APIView):
 
 class OrderView(APIView):
     permission_classes = [IsAuthenticated]
+    throttle_classes = [UserRateThrottle]
 
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -217,6 +229,8 @@ class OrderView(APIView):
 
 
 class SingleOrderView(APIView):
+    throttle_classes = [UserRateThrottle]
+
     def is_in_group(self, user_id, group_name):
         try:
             return Group.objects.get(name=group_name).user_set.filter(id=user_id).exists()
